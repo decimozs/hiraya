@@ -45,7 +45,7 @@ export class Lexer {
       this.currentCharacter() === "\n" ||
       this.currentCharacter() === "\t"
     ) {
-      this.currentCharacter(), this.advance();
+      this.advance();
     }
   }
 
@@ -60,7 +60,7 @@ export class Lexer {
     // Read until the closing quote is encountered
     while (
       this.currentCharacter() !== '"' &&
-      this.currentCharacter !== undefined
+      this.currentCharacter() !== undefined
     ) {
       result += this.currentCharacter();
       this.advance();
@@ -87,13 +87,25 @@ export class Lexer {
   }
 
   /**
-   * Checks whether a given identifier is a keyword.
+   * Checks whether a given identifier is a keyword or datatype.
    * @param {string} identifier - The identifier to check.
-   * @returns {boolean} - True if the identifier is a keyword, false otherwise.
+   * @returns {boolean} - True if the identifier is a keyword or datatype, false otherwise.
    */
-  public isKeyword(identifier: string): boolean {
-    const keywords = ["bagay", "teksto", "bilang", "ipakita"];
-    return keywords.includes(identifier);
+  public isKeywordOrDatatype(
+    identifier: string,
+  ): "KEYWORD" | "DATATYPE" | null {
+    const keywords = ["bagay", "ipakita"];
+    const datatypes = ["teksto", "bilang"];
+
+    if (keywords.includes(identifier)) {
+      return "KEYWORD";
+    }
+
+    if (datatypes.includes(identifier)) {
+      return "DATATYPE";
+    }
+
+    return null;
   }
 
   /**
@@ -130,10 +142,20 @@ export class Lexer {
           identifier += this.currentCharacter();
           this.advance();
         }
-        tokens.push({
-          type: this.isKeyword(identifier) ? "KEYWORD" : "IDENTIFIER",
-          value: identifier,
-        });
+
+        const type = this.isKeywordOrDatatype(identifier);
+
+        if (type) {
+          tokens.push({
+            type,
+            value: identifier,
+          });
+        } else {
+          tokens.push({
+            type: "IDENTIFIER",
+            value: identifier,
+          });
+        }
       } else if (char === "=") {
         // Single character operator
         tokens.push({
@@ -152,6 +174,18 @@ export class Lexer {
         });
         this.advance(); // Skip over the '-'
         this.advance(); // Skip over the '>'
+      } else if (char === "+") {
+        tokens.push({
+          type: "OPERATOR",
+          value: "+",
+        });
+        this.advance();
+      } else if (char === ";") {
+        tokens.push({
+          type: "OPERATOR",
+          value: ";",
+        });
+        this.advance();
       } else {
         // Unknown character
         tokens.push({
